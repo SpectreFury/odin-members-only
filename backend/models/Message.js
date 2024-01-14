@@ -2,11 +2,11 @@ const mongoose = require("mongoose");
 
 const MessageSchema = new mongoose.Schema(
   {
-    title: {
+    text: {
       type: String,
       required: true,
     },
-    text: {
+    author: {
       type: String,
       required: true,
     },

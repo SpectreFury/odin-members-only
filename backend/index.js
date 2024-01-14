@@ -6,11 +6,42 @@ const mongoose = require("mongoose");
 const User = require("./models/User");
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const cors = require("cors");
+const Message = require("./models/Message");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors());
 
 mongoose.connect(process.env.MONGODB_URI);
+
+app.get("/getBlasts", async (req, res) => {
+  try {
+    const messages = await Message.find();
+    const token = req.headers["x-access-token"];
+    const modifiedArray = messages.map((message) => {
+      return {
+        text: message.text,
+        author: "Anonymous",
+      };
+    });
+
+    if (!token) {
+      return res.json(modifiedArray);
+    }
+
+    const decoded = jwt.verify(token, "RANDOM-TOKEN");
+    const user = await User.findOne({ username: decoded.username });
+
+    if (user.isMember) {
+      res.json(messages);
+    } else {
+      res.json(modifiedArray);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+});
 
 app.post("/login", async (req, res) => {
   try {
@@ -36,7 +67,6 @@ app.post("/login", async (req, res) => {
       );
       res.status(200).send({
         message: "Login successful",
-        username: user[0].username,
         token,
       });
     }
@@ -62,11 +92,14 @@ app.post("/sign-up", async (req, res) => {
       password: hashedPassword,
       isMember: false,
     });
-    res.json({
-      message: "Signup Success",
+    res.status(200).send({
+      message: "Sign up successful",
     });
   } catch (error) {
     console.log(error);
+    res.status(500).send({
+      message: error.message,
+    });
   }
 });
 
