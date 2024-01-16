@@ -43,6 +43,35 @@ app.get("/getBlasts", async (req, res) => {
   }
 });
 
+app.post("/join", async (req, res) => {
+  if (req.body.secret.toLowerCase() !== "blair waldorf") {
+    res.json({
+      status: "Incorrect password",
+    });
+    return;
+  }
+
+  const token = await req.headers["x-access-token"];
+
+  if (!token) {
+    res.json({
+      status: "no token found",
+    });
+    return;
+  }
+
+  const decoded = await jwt.verify(token, "RANDOM-TOKEN");
+
+  const user = await User.updateOne(
+    { username: decoded.username },
+    { isMember: true }
+  );
+
+  console.log(user);
+
+  res.json({ status: "successful" });
+});
+
 app.post("/login", async (req, res) => {
   try {
     const user = await User.find({ username: req.body.username });
